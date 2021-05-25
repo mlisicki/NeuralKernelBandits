@@ -1,7 +1,6 @@
 # Online Limited Memory Neural-Linear Bandits with Likelihood Matching #
 
-This library corresponds to the "Online Limited Memory Neural-Linear Bandits with Likelihood Matching" paper, ICML 2021
-[[paper]](https://arxiv.org/abs/2102.03799).
+This library corresponds to the [Online Limited Memory Neural-Linear Bandits with Likelihood Matching](https://arxiv.org/abs/2102.03799) paper, ICML 2021.
 
 The code is based on the "Deep Bayesian Bandits Showdown: An Empirical Comparison of Bayesian Deep Networks for Thompson Sampling" [github repository](https://github.com/tensorflow/models/tree/archive/research/deep_contextual_bandits).
 
