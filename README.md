@@ -7,7 +7,7 @@ The code is based on the "Deep Bayesian Bandits Showdown: An Empirical Compariso
 
 ### Datasets ###
 
-All the datasets can be found in https://archive.ics.uci.edu/ml/index.php, and should be placed under  contextual_bandtis/datasets folder. 
+All the datasets can be found in [UCI Machine Learning Repository](https://archive.ics.uci.edu/ml/index.php), and should be placed under  contextual_bandtis/datasets folder. 
 
 ### How to run the code? ###
 Run at terminal:
