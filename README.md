@@ -1,4 +1,7 @@
 # Online Limited Memory Neural-Linear Bandits with Likelihood Matching #
+<p align="center">
+ <img src="scheme2.png" alt="alt text" width="512">
+</p>
 
 This library corresponds to the [Online Limited Memory Neural-Linear Bandits with Likelihood Matching](https://arxiv.org/abs/2102.03799) paper, ICML 2021.
 
