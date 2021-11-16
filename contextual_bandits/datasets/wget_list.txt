@@ -1,0 +1,7 @@
+https://storage.googleapis.com/bandits_datasets/mushroom.data
+https://storage.googleapis.com/bandits_datasets/raw_stock_contexts
+https://storage.googleapis.com/bandits_datasets/jester_data_40jokes_19181users.npy
+https://storage.googleapis.com/bandits_datasets/shuttle.trn
+https://storage.googleapis.com/bandits_datasets/adult.full
+https://storage.googleapis.com/bandits_datasets/USCensus1990.data.txt
+https://storage.googleapis.com/bandits_datasets/covtype.data
