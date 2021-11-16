@@ -23,6 +23,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import time
 import numpy as np
 
 
@@ -48,6 +49,11 @@ def run_contextual_bandit(context_dim, num_actions, dataset, algos):
 
   h_actions = np.empty((0, len(algos)), float)
   h_rewards = np.empty((0, len(algos)), float)
+  times = []
+  optimal_actions = []
+  optimal_rewards = []
+
+  start = time.time()
 
   # Run the contextual bandit process
   for i in range(num_contexts):
@@ -55,15 +61,20 @@ def run_contextual_bandit(context_dim, num_actions, dataset, algos):
     actions = [a.action(context) for a in algos]
     rewards = [cmab.reward(i, action) for action in actions]
 
+    print("CMAB step {}/{}".format(i,num_contexts))
+
+    t = [time.time()-start]
     for j, a in enumerate(algos):
       a.update(context, actions[j], rewards[j])
+      t += [time.time()-start]
+    times += [t]
 
+    optimal_actions += [cmab.optimal(i)]
+    optimal_rewards += [cmab.reward(i, cmab.optimal(i))]
     h_actions = np.vstack((h_actions, np.array(actions)))
     h_rewards = np.vstack((h_rewards, np.array(rewards)))
 
-    if i % 500 == 0:
-      print('Iteration: ',i,'/',num_contexts)
-  return h_actions, h_rewards
+  return h_actions, h_rewards, optimal_actions, optimal_rewards, times
 
 def run_random_contextual_bandit(context_dim, num_actions, dataset):
   """Run a contextual bandit problem on a set of algorithms.

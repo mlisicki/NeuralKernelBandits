@@ -1,34 +1,71 @@
-# Online Limited Memory Neural-Linear Bandits with Likelihood Matching #
-<p align="center">
- <img src="scheme2.png" alt="alt text" width="512">
-</p>
+# Neural Kernel Bandits
 
-This library corresponds to the [Online Limited Memory Neural-Linear Bandits with Likelihood Matching](https://arxiv.org/abs/2102.03799) paper, ICML 2021.
+Neural kernel bandits are contextual bandit algorithms guided by a neural kernel-induced Gaussian process predictive distribution. The model is most suitable for small data (per arm) structured problems, requiring non-linear function approximation and accurate exploration strategy. The implementation is a part of a larger contextual bandit framework, introduced by [1] and expanded by [2].
 
-The code is based on the "Deep Bayesian Bandits Showdown: An Empirical Comparison of Bayesian Deep Networks for Thompson Sampling" [github repository](https://github.com/tensorflow/models/tree/archive/research/deep_contextual_bandits).
+Currently, the project provides access the following neural kernels:
 
-### Datasets ###
+* Neural tangent kernel (NTK)
+* Conjugate kernel (CK, aka NNGP)
 
-All the datasets can be found in [UCI Machine Learning Repository](https://archive.ics.uci.edu/ml/index.php), and should be placed under  contextual_bandtis/datasets folder. 
+and GP predictive distributions:
 
-### How to run the code? ###
-Run at terminal:
+* NNGP
+* Deep ensembles
+* Randomized Priors
+* NTKGP
+
+as specified in (He - Table 1) and implemented in neural-tangents library (link). The predictive distribution inform the following bandit policies:
+
+* Upper Confidence Bounds (UCB)
+* Thompson Sampling (TS)
+
+This project accompanies the paper:
+
+Lisicki, Michal, Arash Afkanpour, and Graham W. Taylor. "An Empirical Study of Neural Kernel Bandits." Neural Information Processing Systems (NeurIPS) Workshop on Bayesian Deep Learning, 2021. https://arxiv.org/abs/2111.03543.
+
+##### Dependencies
+
+To install the dependencies, enter a Python virtual environment of your choice, and run:
+
+```bash
+python -m pip install -r requirements.txt
 ```
- python3 main.py 
+
+##### How to download datasets?
+
+```bash
+cd contextual_bandits/datasets/
+wget -i wget_list.txt
 ```
-### How to configure the experiment? ###
-At the main.py, set the method into:
-1. neural-linear-lm (Our method)
-2. neural-linear (full memory NeuralTS)
-3. linear (LinearTS)
-4. neural-linear-ntk (NTK version of limited memory NeuralTS)
 
-At dataset sepcify the wanted dataset (an unknown dataset will cause an error).
-For amazon dataset, LinearTS do not work. 
+##### How to run an experiment?
 
-### Requirements ###
+Run the script with default parameters to perform a full experiment with NK-TS. Optionally change the training frequency to perform a significantly faster run without much loss in overall performance:
 
-* tensorflow-gpu 1.15
-* absl-py 0.11
-* scipy 1.5.4
+```bash
+python neural_kernel_experiment.py [--trainfreq=20]
+```
+
+To list all the available options, type:
+
+```bash
+python neural_kernel_experiment.py --help
+```
+
+For consistency in reporting the results, I recommend running the script with a fixed seed (`--seed` flag). All the experiments in the paper were run with seeds in range `1234-1244`.
+
+##### How to analyze the results?
+
+The results are saved in the `./outputs` directory. The experiment file names include the general name of the experiment and the most significant hyperparameters. Plots and a summary can obtained by running:
+
+```bash
+python analyze_results.py
+```
+
+##### References
+
+[1] Riquelme, Carlos, George Tucker, and Jasper Snoek. “Deep Bayesian Bandits Showdown: An Empirical Comparison of Bayesian Deep Networks for Thompson Sampling.” *ArXiv:1802.09127 [Cs, Stat]*, February 25, 2018. http://arxiv.org/abs/1802.09127.
+
+[2] Nabati, Ofir, Tom Zahavy, and Shie Mannor. “Online Limited Memory Neural-Linear Bandits with Likelihood Matching.” *ArXiv:2102.03799 [Cs]*, June 8, 2021. http://arxiv.org/abs/2102.03799.
+
 
