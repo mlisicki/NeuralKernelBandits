@@ -14,7 +14,7 @@ and GP predictive distributions:
 * Randomized Priors
 * NTKGP
 
-as specified in (He - Table 1) and implemented in neural-tangents library (link). The predictive distribution inform the following bandit policies:
+as specified in [3] (Table 1) and implemented in neural-tangents library (link). The predictive distribution inform the following bandit policies:
 
 * Upper Confidence Bounds (UCB)
 * Thompson Sampling (TS)
@@ -23,7 +23,7 @@ This project accompanies the paper:
 
 Lisicki, Michal, Arash Afkanpour, and Graham W. Taylor. "An Empirical Study of Neural Kernel Bandits." Neural Information Processing Systems (NeurIPS) Workshop on Bayesian Deep Learning, 2021. https://arxiv.org/abs/2111.03543.
 
-##### Dependencies
+#### Dependencies
 
 To install the dependencies, enter a Python virtual environment of your choice, and run:
 
@@ -31,14 +31,14 @@ To install the dependencies, enter a Python virtual environment of your choice, 
 python -m pip install -r requirements.txt
 ```
 
-##### How to download datasets?
+#### How to download datasets?
 
 ```bash
 cd contextual_bandits/datasets/
 wget -i wget_list.txt
 ```
 
-##### How to run an experiment?
+#### How to run an experiment?
 
 Run the script with default parameters to perform a full experiment with NK-TS. Optionally change the training frequency to perform a significantly faster run without much loss in overall performance:
 
@@ -54,7 +54,7 @@ python neural_kernel_experiment.py --help
 
 For consistency in reporting the results, I recommend running the script with a fixed seed (`--seed` flag). All the experiments in the paper were run with seeds in range `1234-1244`.
 
-##### How to analyze the results?
+#### How to analyze the results?
 
 The results are saved in the `./outputs` directory. The experiment file names include the general name of the experiment and the most significant hyperparameters. Plots and a summary can obtained by running:
 
@@ -62,10 +62,11 @@ The results are saved in the `./outputs` directory. The experiment file names in
 python analyze_results.py
 ```
 
-##### References
+#### References
 
 [1] Riquelme, Carlos, George Tucker, and Jasper Snoek. “Deep Bayesian Bandits Showdown: An Empirical Comparison of Bayesian Deep Networks for Thompson Sampling.” *ArXiv:1802.09127 [Cs, Stat]*, February 25, 2018. http://arxiv.org/abs/1802.09127.
 
 [2] Nabati, Ofir, Tom Zahavy, and Shie Mannor. “Online Limited Memory Neural-Linear Bandits with Likelihood Matching.” *ArXiv:2102.03799 [Cs]*, June 8, 2021. http://arxiv.org/abs/2102.03799.
 
+[3] He, Bobby, Balaji Lakshminarayanan, and Yee Whye Teh. “Bayesian Deep Ensembles via the Neural Tangent Kernel.” ArXiv:2007.05864 [Cs, Stat], October 24, 2020. http://arxiv.org/abs/2007.05864.
 
