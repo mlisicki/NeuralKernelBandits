@@ -19,7 +19,7 @@ from bandits.data.data_sampler import sample_adult_data
 from bandits.data.data_sampler import sample_census_data
 from bandits.data.data_sampler import sample_covertype_data
 from bandits.data.data_sampler import sample_jester_data
-from bandits.data.data_sampler import sample_mushroom_data, sample_txt_data
+from bandits.data.data_sampler import sample_mushroom_data
 from bandits.data.data_sampler import sample_statlog_data
 from bandits.data.data_sampler import sample_stock_data
 from bandits.data.synthetic_data_sampler import sample_linear_data
@@ -78,6 +78,12 @@ flags.DEFINE_string(
     'Directory where Census data is stored.')
 
 flags.DEFINE_integer("task_id", None, "ID of task")
+
+
+class HParams(dict):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.__dict__ = self
 
 
 def sample_data(data_type, num_contexts=None):
@@ -203,43 +209,43 @@ def display_final_results(algos, opt_rewards, opt_actions, res, name):
 
 def get_algorithm(method, num_actions, context_dim):
     if method == 'linear':
-        hparams = tf.contrib.training.HParams(num_actions=num_actions,
-                                              context_dim=context_dim,
-                                              a0=6,
-                                              b0=6,
-                                              lambda_prior=0.25,
-                                              initial_pulls=3)
+        hparams = HParams(num_actions=num_actions,
+                          context_dim=context_dim,
+                          a0=6,
+                          b0=6,
+                          lambda_prior=0.25,
+                          initial_pulls=3)
         algo = LinearFullPosteriorSampling('LinearTS / LinFullPost', hparams)
 
     elif method == 'uniform':
         # Uniform and Fixed
-        hparams = tf.contrib.training.HParams(num_actions=num_actions)
+        hparams = HParams(num_actions=num_actions)
         algo = UniformSampling('Uniform Sampling', hparams)
 
     elif method == 'nk-ts':
-        hparams = tf.contrib.training.HParams(alg="ts",
-                                              joint=FLAGS.joint,
-                                              normalize_y=True,
-                                              mode=FLAGS.nkmode,
-                                              num_actions=num_actions,
-                                              context_dim=context_dim,
-                                              num_layers=FLAGS.nlayers,
-                                              gamma=FLAGS.nkreg, # diag reg
-                                              eta=FLAGS.eta, # Exploration parameter
-                                              training_freq=FLAGS.trainfreq)
+        hparams = HParams(alg="ts",
+                          joint=FLAGS.joint,
+                          normalize_y=True,
+                          mode=FLAGS.nkmode,
+                          num_actions=num_actions,
+                          context_dim=context_dim,
+                          num_layers=FLAGS.nlayers,
+                          gamma=FLAGS.nkreg, # diag reg
+                          eta=FLAGS.eta, # Exploration parameter
+                          training_freq=FLAGS.trainfreq)
         algo = NKBandit('NK-TS', hparams)  #
 
     elif method == 'nk-ucb':
-        hparams = tf.contrib.training.HParams(alg="ucb",
-                                              joint=FLAGS.joint,
-                                              normalize_y=True,
-                                              mode=FLAGS.nkmode,
-                                              num_actions=num_actions,
-                                              context_dim=context_dim,
-                                              num_layers=FLAGS.nlayers,
-                                              gamma=FLAGS.nkreg, # diag reg
-                                              eta=FLAGS.eta, # Exploration parameter
-                                              training_freq=FLAGS.trainfreq)
+        hparams = HParams(alg="ucb",
+                          joint=FLAGS.joint,
+                          normalize_y=True,
+                          mode=FLAGS.nkmode,
+                          num_actions=num_actions,
+                          context_dim=context_dim,
+                          num_layers=FLAGS.nlayers,
+                          gamma=FLAGS.nkreg, # diag reg
+                          eta=FLAGS.eta, # Exploration parameter
+                          training_freq=FLAGS.trainfreq)
         algo = NKBandit('NK-UCB', hparams)  #
     else:
         assert False, 'method name is unknown.'

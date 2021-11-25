@@ -22,9 +22,13 @@ from __future__ import print_function
 import numpy as np
 import pandas as pd
 import tensorflow as tf
+if tf.__version__.startswith('1'):
+    from tensorflow.contrib import learn
+else:
+    # Warning: Currently switching to TF2 prevents loading some of the non-UCI datasets
+    import tensorflow.compat.v1 as tf
 import bandits.data.data_helpers as data_helpers
 from sklearn import preprocessing
-from tensorflow.contrib import learn
 def one_hot(df, cols):
   """Returns one-hot encoding of DataFrame df including columns in cols."""
   for col in cols:
