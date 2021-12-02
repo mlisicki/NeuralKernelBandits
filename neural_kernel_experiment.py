@@ -225,7 +225,6 @@ def get_algorithm(method, num_actions, context_dim):
     elif method == 'nk-ts':
         hparams = HParams(alg="ts",
                           joint=FLAGS.joint,
-                          normalize_y=True,
                           mode=FLAGS.nkmode,
                           num_actions=num_actions,
                           context_dim=context_dim,
@@ -238,7 +237,6 @@ def get_algorithm(method, num_actions, context_dim):
     elif method == 'nk-ucb':
         hparams = HParams(alg="ucb",
                           joint=FLAGS.joint,
-                          normalize_y=True,
                           mode=FLAGS.nkmode,
                           num_actions=num_actions,
                           context_dim=context_dim,
@@ -288,7 +286,7 @@ def experiment(methods, dataset, token):
         # Collect experiment statistics
         pkl.dump({'desc': 'NK bandits experiment', 'seed': FLAGS.seed, 'times': times,
                   'models': [alg.name for alg in algos], 'dataset': data_type,
-                  'hparams': [str(alg.hparams) for alg in algos], 'flags': FLAGS.flag_values_dict(),
+                  'hparams': [str(list(alg.hparams.items())) for alg in algos], 'flags': FLAGS.flag_values_dict(),
                   'actions': h_actions, 'rewards': h_rewards, 'opt_actions': optimal_actions,
                   'opt_rewards': optimal_rewards, 'opt_actions_data': opt_actions, 'opt_rewards_data': opt_rewards},
                  open("{}/neural_kernel_experiment_{}_{}_run{}_{}.pkl".format(outdir,num_contexts,

@@ -51,7 +51,7 @@ for dataset_name in dslist:
             model = d['models'][i]
             if hparams['joint']:
                 model = "Joint{}".format(model)
-            model += "_{}_g{}e{}".format(hparams['mode'],hparams['gamma'],hparams['eta'])
+            model += "_{}_g{}e{}l{}".format(hparams['mode'],hparams['gamma'],hparams['eta'],hparams['num_layers'])
             if hparams['training_freq']>1:
                 model += "f{}".format(hparams['training_freq'])
             if model not in data[dataset_name].keys():
