@@ -8,17 +8,16 @@ from glob import glob
 import os
 from statistics import median
 
-results_path = "./outputs/"
-figure_path = "./figures/"
-try:
-    os.makedirs(figure_path)
-except:
-    pass
-
+RESULTS_PATH= "./outputs/"
+FIGURE_PATH = "./figures/"
 NUM_COLORS = 30
 LINE_STYLES = ['solid', 'dashed', 'dashdot', 'dotted']
 NUM_STYLES = len(LINE_STYLES)
+PLOT_SIZE = (14, 8)
+FONT_SIZE = 16
+
 clrs = sns.color_palette('husl', n_colors=NUM_COLORS)
+
 
 def parse(s):
     s = s.strip('[]')
@@ -29,22 +28,26 @@ def parse(s):
         a = eval(a)
         try:
             b = eval(b)
-        except:
+        except (ValueError, SyntaxError):
             b = None
         out.append((a, b))
     return out
 
+
+def init_dict(keys):
+    return  {k: [] for k in keys}
+
 # Plot statistics
-times_table = None
-times_std = None
-reward_table = None
-reward_table_std = None
-reward_table_full = None
 dslist = ['adult', 'census', 'covertype', 'financial', 'jester', 'mushroom', 'statlog']
 data = {}
+try:
+    os.makedirs(FIGURE_PATH)
+except OSError:
+    pass
+reward_table = None
 for dataset_name in dslist:
     data[dataset_name] = {}
-    for fn in glob("{}/*{}.pkl".format(results_path, dataset_name)):
+    for fn in glob("{}/*{}.pkl".format(RESULTS_PATH, dataset_name)):
         d = pkl.load(open(fn, "rb"))
         for i in range(len(d['models'])):
             hparams = dict(parse(d['hparams'][i]))
@@ -55,14 +58,14 @@ for dataset_name in dslist:
             if hparams['training_freq']>1:
                 model += "f{}".format(hparams['training_freq'])
             if model not in data[dataset_name].keys():
-                data[dataset_name][model] = {}
-                data[dataset_name][model]['cum_regret'] = []
-                data[dataset_name][model]['cum_reward'] = []
-                data[dataset_name][model]['cum_time'] = []
-                data[dataset_name][model]['times'] = []
-                data[dataset_name][model]['min_times'] = []
-                data[dataset_name][model]['max_times'] = []
-                data[dataset_name][model]['median_times'] = []
+                data[dataset_name][model] = {
+                    'cum_regret': [],
+                    'cum_reward': [],
+                    'cum_time': [],
+                    'times': [],
+                    'min_times': [],
+                    'max_times': [],
+                    'median_times': []}
             data[dataset_name][model]['cum_regret'] += [np.cumsum(d['opt_rewards_data'] - d['rewards'][:, i])]
             data[dataset_name][model]['cum_reward'] += [np.cumsum(d['rewards'][:, i])]
             if "times" in d:
@@ -73,14 +76,15 @@ for dataset_name in dslist:
                 data[dataset_name][model]['max_times'] += [max(times[:,i+1]-times[:,i])]
                 data[dataset_name][model]['median_times'] += [median(times[:,i+1]-times[:,i])]
     if reward_table is None:
-        reward_table = {k: [] for k in data[dataset_name].keys()}
-        reward_table_std = {k: [] for k in data[dataset_name].keys()}
-        reward_table_full = {k: [] for k in data[dataset_name].keys()}
-        times_table = {k:[] for k in data[dataset_name].keys()}
-        times_table_std = {k:[] for k in data[dataset_name].keys()}
+        keys = data[dataset_name].keys()
+        reward_table = init_dict(keys)
+        reward_table_std = init_dict(keys)
+        reward_table_full = init_dict(keys)
+        times_table = init_dict(keys)
+        times_table_std = init_dict(keys)
 
-    plt.figure(figsize=(14, 8))
-    plt.rcParams['font.size'] = 16
+    plt.figure(figsize=PLOT_SIZE)
+    plt.rcParams['font.size'] = FONT_SIZE
     num_exp = []
     clr = 0
     for m in data[dataset_name].keys():
@@ -97,11 +101,11 @@ for dataset_name in dslist:
     plt.ylabel("Cumulative Reward")
     plt.xlabel("Step")
     plt.title(dataset_name + " (avg over {}-{} runs)".format(min(num_exp), max(num_exp)))
-    plt.savefig(figure_path + "reward_{}.pdf".format(dataset_name), bbox_inches='tight')
+    plt.savefig(FIGURE_PATH + "reward_{}.pdf".format(dataset_name), bbox_inches='tight')
     plt.close()
 
-    plt.figure(figsize=(14, 8))
-    plt.rcParams['font.size'] = 16
+    plt.figure(figsize=PLOT_SIZE)
+    plt.rcParams['font.size'] = FONT_SIZE
     num_exp = []
     clr = 0
     for m in data[dataset_name].keys():
@@ -113,11 +117,11 @@ for dataset_name in dslist:
     plt.ylabel("Cumulative Regret")
     plt.xlabel("Step")
     plt.title(dataset_name + " (avg over {}-{} runs)".format(min(num_exp), max(num_exp)))
-    plt.savefig(figure_path + "regret_{}.pdf".format(dataset_name), bbox_inches='tight')
+    plt.savefig(FIGURE_PATH + "regret_{}.pdf".format(dataset_name), bbox_inches='tight')
     plt.close()
 
-    plt.figure(figsize=(14,8))
-    plt.rcParams['font.size'] = 16
+    plt.figure(figsize=PLOT_SIZE)
+    plt.rcParams['font.size'] = FONT_SIZE
     num_exp = []
     clr = 0
     for m in data[dataset_name].keys():
@@ -128,7 +132,7 @@ for dataset_name in dslist:
             times_table[m] += [mean_times[-1]]
             times_table_std[m] += [std_times[-1]]
             plt.plot(mean_times, label=m, color=clrs[clr], linestyle=LINE_STYLES[clr%NUM_STYLES])
-            clr+=1
+            clr += 1
         else:
             times_table[m] += [None]
             times_table_std[m] += [None]
@@ -136,7 +140,7 @@ for dataset_name in dslist:
     plt.ylabel("Clock Time [s]")
     plt.xlabel("Step")
     plt.title(dataset_name + " (avg over {}-{} runs)".format(min(num_exp),max(num_exp)))
-    plt.savefig(figure_path+"time_{}.pdf".format(dataset_name), bbox_inches='tight')
+    plt.savefig(FIGURE_PATH+"time_{}.pdf".format(dataset_name), bbox_inches='tight')
     plt.close()
 
 # Prepare the results table
@@ -147,7 +151,7 @@ mask[np.argmax(df.T.sort_index().values,axis=0),np.arange(mask.shape[1])] = 1
 df_total = (df.astype('int').astype('str')+" ± "+df_std.astype('int').astype('str')).T.sort_index()
 print(tabulate(df_total, headers='keys', tablefmt='psql'))
 
-with open("{}/table.tex".format(figure_path),"w") as f:
+with open("{}/table.tex".format(FIGURE_PATH),"w") as f:
     df_total = (df.astype('int').astype('str')+" ± "+df_std.astype('int').astype('str')).T
     f.write(df_total.sort_index().style.apply(lambda x: np.where(mask, 'bfseries: ;', None),axis=None).to_latex(
         position_float="centering", hrules=True, label="table:1", caption="Cumulative rewards").replace('_','\_'))
