@@ -25,7 +25,7 @@ Lisicki, Michal, Arash Afkanpour, and Graham W. Taylor. "An Empirical Study of N
 
 #### Dependencies
 
-To install the dependencies, enter a Python virtual environment of your choice, and run:
+To install the dependencies, enter a Python 3.7+ virtual environment of your choice, and run:
 
 ```bash
 python -m pip install -r requirements.txt
