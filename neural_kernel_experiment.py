@@ -304,6 +304,7 @@ def main(argv):
     print(token)
     if FLAGS.seed is not None:
         np.random.seed(FLAGS.seed)
+        tf.random.set_seed(FLAGS.seed)
     methods = FLAGS.methods
     datasets = ['financial', 'jester', 'statlog', 'adult', 'covertype', 'census', 'mushroom']
     for dataset in datasets:
