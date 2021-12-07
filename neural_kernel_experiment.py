@@ -286,7 +286,7 @@ def experiment(methods, dataset, token):
         # Collect experiment statistics
         pkl.dump({'desc': 'NK bandits experiment', 'seed': FLAGS.seed, 'times': times,
                   'models': [alg.name for alg in algos], 'dataset': data_type,
-                  'hparams': [str(list(alg.hparams.items())) for alg in algos], 'flags': FLAGS.flag_values_dict(),
+                  'hparams': [str(alg.hparams) for alg in algos], 'flags': FLAGS.flag_values_dict(),
                   'actions': h_actions, 'rewards': h_rewards, 'opt_actions': optimal_actions,
                   'opt_rewards': optimal_rewards, 'opt_actions_data': opt_actions, 'opt_rewards_data': opt_rewards},
                  open("{}/neural_kernel_experiment_{}_{}_run{}_{}.pkl".format(outdir,num_contexts,

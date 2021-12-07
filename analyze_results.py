@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from glob import glob
 import os
 from statistics import median
+from ast import literal_eval
 
 RESULTS_PATH= "./outputs/"
 FIGURE_PATH = "./figures/"
@@ -18,24 +19,8 @@ FONT_SIZE = 16
 
 clrs = sns.color_palette('husl', n_colors=NUM_COLORS)
 
-
-def parse(s):
-    s = s.strip('[]')
-    tuples = s.split('), ')
-    out = []
-    for x in tuples:
-        a,b = x.strip('()').split(', ')
-        a = eval(a)
-        try:
-            b = eval(b)
-        except (ValueError, SyntaxError):
-            b = None
-        out.append((a, b))
-    return out
-
-
 def init_dict(keys):
-    return  {k: [] for k in keys}
+    return {k: [] for k in keys}
 
 # Plot statistics
 dslist = ['adult', 'census', 'covertype', 'financial', 'jester', 'mushroom', 'statlog']
@@ -50,7 +35,7 @@ for dataset_name in dslist:
     for fn in glob("{}/*{}.pkl".format(RESULTS_PATH, dataset_name)):
         d = pkl.load(open(fn, "rb"))
         for i in range(len(d['models'])):
-            hparams = dict(parse(d['hparams'][i]))
+            hparams = dict(literal_eval(d['hparams'][i]))
             model = d['models'][i]
             if hparams['joint']:
                 model = "Joint{}".format(model)
