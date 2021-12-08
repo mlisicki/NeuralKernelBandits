@@ -1,7 +1,6 @@
 import os
 import pickle as pkl
 import time
-from collections import UserDict
 
 import numpy as np
 import tensorflow as tf
@@ -74,15 +73,11 @@ flags.DEFINE_string(
 flags.DEFINE_integer("task_id", None, "ID of task")
 
 
-class HParams(UserDict):
+class HParams(dict):
 
-  def __getattr__(self, name):
-
-    if name in self.data:
-      return self.data[name]
-
-    raise AttributeError("{} not found in {}".format(
-        name, self.__class__.__qualname__))
+  def __init__(self, *args, **kwargs):
+    super().__init__(*args, **kwargs)
+    self.__dict__ = self
 
 
 def sample_data(data_type, num_contexts=None):
