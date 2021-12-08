@@ -13,8 +13,9 @@ from bandits.algorithms.nk_sampling import NKBandit
 from bandits.algorithms.uniform_sampling import UniformSampling
 from bandits.core.contextual_bandit import run_contextual_bandit
 from bandits.data.data_sampler import (sample_adult_data, sample_census_data,
-    sample_covertype_data, sample_jester_data, sample_mushroom_data,
-    sample_statlog_data, sample_stock_data)
+                                       sample_covertype_data,
+                                       sample_jester_data, sample_mushroom_data,
+                                       sample_statlog_data, sample_stock_data)
 from bandits.data.synthetic_data_sampler import sample_linear_data
 
 # Set up your file routes to the data files.
@@ -76,7 +77,13 @@ flags.DEFINE_integer("task_id", None, "ID of task")
 class HParams(UserDict):
 
   def __getattr__(self, name):
+
+    if name in self.data:
       return self.data[name]
+
+    raise AttributeError("{} not found in {}".format(
+        name, self.__class__.__qualname__))
+
 
 def sample_data(data_type, num_contexts=None):
   """Sample data from given 'data_type'.
