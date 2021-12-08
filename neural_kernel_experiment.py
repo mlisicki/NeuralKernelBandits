@@ -1,24 +1,21 @@
-from absl import flags
-from absl import app
-import numpy as np
 import os
-import tensorflow as tf
 import pickle as pkl
 import time
-from textwrap import fill
+from collections import UserDict
 
-from bandits.core.contextual_bandit import run_contextual_bandit
-from bandits.data.data_sampler import sample_adult_data
-from bandits.data.data_sampler import sample_census_data
-from bandits.data.data_sampler import sample_covertype_data
-from bandits.data.data_sampler import sample_jester_data
-from bandits.data.data_sampler import sample_mushroom_data
-from bandits.data.data_sampler import sample_statlog_data
-from bandits.data.data_sampler import sample_stock_data
-from bandits.data.synthetic_data_sampler import sample_linear_data
+import numpy as np
+import tensorflow as tf
+from absl import app, flags
+
+from bandits.algorithms.linear_full_posterior_sampling import (
+    LinearFullPosteriorSampling)
 from bandits.algorithms.nk_sampling import NKBandit
-from bandits.algorithms.linear_full_posterior_sampling import LinearFullPosteriorSampling
 from bandits.algorithms.uniform_sampling import UniformSampling
+from bandits.core.contextual_bandit import run_contextual_bandit
+from bandits.data.data_sampler import (sample_adult_data, sample_census_data,
+    sample_covertype_data, sample_jester_data, sample_mushroom_data,
+    sample_statlog_data, sample_stock_data)
+from bandits.data.synthetic_data_sampler import sample_linear_data
 
 # Set up your file routes to the data files.
 BASE_ROUTE = os.getcwd()
@@ -76,18 +73,10 @@ flags.DEFINE_string(
 flags.DEFINE_integer("task_id", None, "ID of task")
 
 
-class HParams:
+class HParams(UserDict):
 
-  def __init__(self, **kwargs):
-    for k, v in kwargs.items():
-      setattr(self, k, v)
-
-  def __repr__(self):
-    output = self.__class__.__qualname__ + "({})".format(", ".join(
-        [f"{k}={v}" for k, v in self.__dict__.items()]))
-
-    return fill(output, width=80, subsequent_indent=' ' * 2, tabsize=4)
-
+  def __getattr__(self, name):
+      return self.data[name]
 
 def sample_data(data_type, num_contexts=None):
   """Sample data from given 'data_type'.
@@ -270,7 +259,7 @@ def get_algorithm(method, num_actions, context_dim):
     algo = NKBandit('NK-UCB', hparams)  #
 
   else:
-      raise ValueError(f"Method name {method} is not found")
+    raise ValueError(f"Method name {method} is not found")
 
   return algo
 
@@ -296,6 +285,7 @@ def experiment(methods, dataset, token):
     algos = [
         get_algorithm(method, num_actions, context_dim) for method in methods
     ]
+
     results = run_contextual_bandit(context_dim, num_actions, dataset, algos)
 
     h_actions, h_rewards, optimal_actions, optimal_rewards, times = results
@@ -313,27 +303,28 @@ def experiment(methods, dataset, token):
     for i_alg in range(len(algos)):
       res[i_alg, :] += 1 * ((actions[i_alg] != opt_actions))
 
-    # Collect experiment statistics
-    pkl.dump(
-        {
-            'desc': 'NK bandits experiment',
-            'seed': FLAGS.seed,
-            'times': times,
-            'models': [alg.name for alg in algos],
-            'dataset': data_type,
-            'hparams': [str(alg.hparams) for alg in algos],
-            'flags': FLAGS.flag_values_dict(),
-            'actions': h_actions,
-            'rewards': h_rewards,
-            'opt_actions': optimal_actions,
-            'opt_rewards': optimal_rewards,
-            'opt_actions_data': opt_actions,
-            'opt_rewards_data': opt_rewards
-        },
-        open(
-            "{}/neural_kernel_experiment_{}_{}_run{}_{}.pkl".format(
-                OUTDIR, num_contexts, str(token), str(i_run), data_type),
-            "wb")),
+    pkl_path = os.path.join(
+        OUTDIR, "neural_kernel_experiment_{}_{}_run{}_{}.pkl".format(
+            num_contexts, str(token), str(i_run), data_type))
+
+    with open(pkl_path, "wb") as fp:
+      # Collect experiment statistics
+      pkl.dump(
+          {
+              'desc': 'NK bandits experiment',
+              'seed': FLAGS.seed,
+              'times': times,
+              'models': [alg.name for alg in algos],
+              'dataset': data_type,
+              'hparams': [str(alg.hparams) for alg in algos],
+              'flags': FLAGS.flag_values_dict(),
+              'actions': h_actions,
+              'rewards': h_rewards,
+              'opt_actions': optimal_actions,
+              'opt_rewards': optimal_rewards,
+              'opt_actions_data': opt_actions,
+              'opt_rewards_data': opt_rewards
+          }, fp)
 
     print('Run number {}'.format(i_run + 1))
     display_final_results(algos, opt_rewards, opt_actions, rewards, data_type)
