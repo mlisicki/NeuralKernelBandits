@@ -49,11 +49,12 @@ for dataset_name in dslist:
         for i in range(len(d['models'])):
             hparams = dict(parse(d['hparams'][i]))
             model = d['models'][i]
-            if hparams['joint']:
-                model = "Joint{}".format(model)
-            model += "_{}_g{}e{}l{}".format(hparams['mode'],hparams['gamma'],hparams['eta'],hparams['num_layers'])
-            if hparams['training_freq']>1:
-                model += "f{}".format(hparams['training_freq'])
+            if model.startswith("NK"):
+                if hparams['joint']:
+                    model = "Joint{}".format(model)
+                model += "_{}_g{}e{}l{}".format(hparams['mode'],hparams['gamma'],hparams['eta'],hparams['num_layers'])
+                if hparams['training_freq']>1:
+                    model += "f{}".format(hparams['training_freq'])
             if model not in data[dataset_name].keys():
                 data[dataset_name][model] = {}
                 data[dataset_name][model]['cum_regret'] = []

@@ -6,6 +6,7 @@ from absl import flags
 from absl import app
 import numpy as np
 import os
+import pickle as pkl
 import tensorflow as tf
 import multiprocessing
 
@@ -433,8 +434,8 @@ def experiment(method, dataset):
   tfe=tfn*2
   data_type = dataset
   l_sizes=[50]
-  outdir  ="./"
-  Nruns = 10
+  outdir = "./outputs/"
+  Nruns = 1
   if data_type == 'amazon':
       textflag = 'yes'
   else:
@@ -447,7 +448,7 @@ def experiment(method, dataset):
   if not os.path.exists(outdir):
       os.makedirs(outdir)
 
-  res = np.zeros((1,num_contexts))
+  res = np.zeros((1, len(dataset)))
   totalreward=[0]
   rewards = [[]]
 
@@ -455,7 +456,7 @@ def experiment(method, dataset):
       algo = get_algorithm(method, num_actions, context_dim, l_sizes, tfn, tfe, textflag)
       algos = [algo]
       results = run_contextual_bandit(context_dim, num_actions, dataset, algos)
-      h_actions, h_rewards = results
+      h_actions, h_rewards, optimal_actions, optimal_rewards, times = results
       for j, a in enumerate(algos):
           print(np.sum(h_rewards[:, j]))
           totalreward[j]+=((np.sum(h_rewards[:, j]))/Nruns)
@@ -466,6 +467,14 @@ def experiment(method, dataset):
               actions[i].append(a)
       for i_alg in range(len(algos)):
           res[i_alg,:]+=1*((actions[i_alg] != opt_actions))
+        # Collect experiment statistics
+      pkl.dump({'desc': 'Legacy experiment', 'times': times,
+                  'models': [alg.name for alg in algos], 'dataset': data_type,
+                  'hparams': [str(alg.hparams) for alg in algos], 'flags': FLAGS.flag_values_dict(),
+                  'actions': h_actions, 'rewards': h_rewards, 'opt_actions': optimal_actions,
+                  'opt_rewards': optimal_rewards, 'opt_actions_data': opt_actions, 'opt_rewards_data': opt_rewards},
+                 open("{}/legacy_experiment_{}_run{}_{}.pkl".format(outdir,num_contexts,
+                         str(i_run), data_type), "wb")),
 
       print('Run number {}'.format(i_run+1))
       display_final_results(algos, opt_rewards, opt_actions, rewards, data_type)
@@ -481,9 +490,13 @@ def main(argv):
 
     method = 'neural-linear-lm' # linear/ neural-linear/ neural-linear-lm/ neural-linear-ntk
     gpu = 0
-    dataset = 'statlog'
     set_gpu(gpu)
-    experiment(method, dataset)
+    datasets = ['financial', 'jester', 'statlog', 'adult', 'covertype', 'census', 'mushroom']
+    for dataset in datasets:
+        print("================")
+        print(dataset)
+        print("================")
+        experiment(method, dataset)
 
 if __name__ == "__main__":
     app.run(main)

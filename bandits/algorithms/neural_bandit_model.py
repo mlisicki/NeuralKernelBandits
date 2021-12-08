@@ -27,7 +27,6 @@ import tensorflow as tf
 import numpy as np
 from absl import flags
 from bandits.core.bayesian_nn import BayesianNN
-import ipdb
 
 FLAGS = flags.FLAGS
 
