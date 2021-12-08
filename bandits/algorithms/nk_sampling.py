@@ -23,7 +23,6 @@ import numpy as np
 from sklearn.preprocessing import StandardScaler
 import neural_tangents as nt
 from neural_tangents import stax
-import neural_tangents as nt
 import jax
 print(jax.devices())
 from jax.config import config
