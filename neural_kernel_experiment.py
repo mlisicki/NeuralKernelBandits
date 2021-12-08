@@ -316,7 +316,7 @@ def experiment(methods, dataset, token):
               'times': times,
               'models': [alg.name for alg in algos],
               'dataset': data_type,
-              'hparams': [str(alg.hparams) for alg in algos],
+              'hparams': [alg.hparams for alg in algos],
               'flags': FLAGS.flag_values_dict(),
               'actions': h_actions,
               'rewards': h_rewards,
