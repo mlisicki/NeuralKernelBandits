@@ -1,0 +1,8 @@
+*.egg-info/
+__pycache__/
+outputs/
+figures/
+contextual_bandits/
+
+!contextual_bandits/datasets/shuttle.trn
+!contextual_bandits/datasets/wget_list.txt

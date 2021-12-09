@@ -25,7 +25,7 @@ Lisicki, Michal, Arash Afkanpour, and Graham W. Taylor. "An Empirical Study of N
 
 #### Dependencies
 
-To install the dependencies, enter a Python virtual environment of your choice, and run:
+To install the dependencies, enter a Python 3.7+ virtual environment of your choice, and run:
 
 ```bash
 python -m pip install -r requirements.txt
@@ -70,3 +70,4 @@ python analyze_results.py
 
 [3] He, Bobby, Balaji Lakshminarayanan, and Yee Whye Teh. “Bayesian Deep Ensembles via the Neural Tangent Kernel.” ArXiv:2007.05864 [Cs, Stat], October 24, 2020. http://arxiv.org/abs/2007.05864.
 
+Bandits Code based on repos: [Online Limited Memory Neural-Linear Bandits with Likelihood Matching](https://github.com/ofirnabati/Neural-Linear-Bandits-with-Likelihood-Matching) and [Deep Bayesian Bandits Library](https://github.com/tensorflow/models/tree/archive/research/deep_contextual_bandits)
