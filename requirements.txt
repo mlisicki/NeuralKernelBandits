@@ -5,6 +5,7 @@ neural-tangents==0.3.9
 jaxlib==0.1.73
 mpmath==1.2.1
 scikit-learn==1.0.1
+matplotlib
 tabulate
 seaborn
 Jinja2
