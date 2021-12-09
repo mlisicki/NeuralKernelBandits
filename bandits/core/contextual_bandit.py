@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+"""
+Modifications copyright (C) 2021 Michal Lisicki
+"""
 
 """Define a contextual bandit from which we can sample and compute rewards.
 
