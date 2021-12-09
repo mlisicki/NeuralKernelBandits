@@ -14,9 +14,10 @@
 # ==============================================================================
 """
 Modifications copyright (C) 2021 Michal Lisicki
-"""
 
-"""Functions to create bandit problems from datasets."""
+
+Functions to create bandit problems from datasets.
+"""
 
 from __future__ import absolute_import
 from __future__ import division

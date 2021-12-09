@@ -14,9 +14,9 @@
 # ==============================================================================
 """
 Modifications copyright (C) 2021 Michal Lisicki
-"""
 
-"""Define a contextual bandit from which we can sample and compute rewards.
+
+Define a contextual bandit from which we can sample and compute rewards.
 
 We can feed the data, sample a context, its reward for a specific action, and
 also the optimal action for a given context.
