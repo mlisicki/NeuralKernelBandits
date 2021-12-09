@@ -44,6 +44,8 @@ reward_table = None
 
 os.makedirs(FIGURE_PATH, exist_ok=True)
 
+# Read results from all the files in outputs directory into a dictionaty and
+# generate plots
 for dataset_name in DSLIST:
   data[dataset_name] = {}
 
@@ -95,6 +97,7 @@ for dataset_name in DSLIST:
     times_table = defaultdict(list)
     times_table_std = defaultdict(list)
 
+  # Plot cumulative reward curves for all models
   plt.figure(figsize=PLOT_SIZE)
   plt.rcParams['font.size'] = FONT_SIZE
 
@@ -126,6 +129,7 @@ for dataset_name in DSLIST:
               bbox_inches='tight')
   plt.close()
 
+  # Plot cumulative regret curves for all models
   plt.figure(figsize=PLOT_SIZE)
   plt.rcParams['font.size'] = FONT_SIZE
 
@@ -150,6 +154,7 @@ for dataset_name in DSLIST:
               bbox_inches='tight')
   plt.close()
 
+  # Plot cumulative computation time curves for all models
   plt.figure(figsize=PLOT_SIZE)
   plt.rcParams['font.size'] = FONT_SIZE
 
@@ -190,6 +195,7 @@ mask[np.argmax(df.T.sort_index().values, axis=0), np.arange(mask.shape[1])] = 1
 df_total = (df.astype('int').astype('str') + " ± " +
             df_std.astype('int').astype('str')).T.sort_index()
 
+# Print the table to the standard output and to a file in a latex format
 print(tabulate(df_total, headers='keys', tablefmt='psql'))
 
 with open("{}/table.tex".format(FIGURE_PATH), "w") as f:
