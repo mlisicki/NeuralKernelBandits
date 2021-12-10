@@ -17,14 +17,15 @@ from bandits.algorithms.neural_linear_sampling_lm import (
 from bandits.algorithms.neural_linear_sampling_ntk import (
     NeuralLinearPosteriorSamplingNTK)
 from bandits.core.contextual_bandit import run_contextual_bandit
-from bandits.data.data_sampler import (sample_adult_data, sample_amazon_data,
-    sample_aps_data, sample_census_data, sample_covertype_data,
-    sample_diabetic_data, sample_eeg_data, sample_jester_data,
-    sample_mushroom_data, sample_phone_data, sample_statlog_data,
-    sample_stock_data, sample_txt_data)
+from bandits.data.data_sampler import (
+    sample_adult_data, sample_amazon_data, sample_aps_data, sample_census_data,
+    sample_covertype_data, sample_diabetic_data, sample_eeg_data,
+    sample_jester_data, sample_mushroom_data, sample_phone_data,
+    sample_statlog_data, sample_stock_data, sample_txt_data)
 from bandits.data.synthetic_data_sampler import (sample_linear_data,
-    sample_sparse_linear_data, sample_wheel2_bandit_data,
-    sample_wheel_bandit_data)
+                                                 sample_sparse_linear_data,
+                                                 sample_wheel2_bandit_data,
+                                                 sample_wheel_bandit_data)
 
 # Set up your file routes to the data files.
 base_route = os.getcwd()
@@ -496,10 +497,10 @@ def experiment(method, dataset):
     for i_alg in range(len(algos)):
       res[i_alg, :] += 1 * ((actions[i_alg] != opt_actions))
 
-    with open(
-        "{}/legacy_experiment_{}_run{}_{}.pkl".format(outdir, num_contexts,
-                                                      str(i_run), data_type),
-        "wb") as fp:
+    pickle_path = "{}/legacy_experiment_{}_run{}_{}.pkl".format(
+        outdir, num_contexts, str(i_run), data_type)
+
+    with open(pickle_path, "wb") as fp:
       # Collect experiment statistics
       pkl.dump(
           {
