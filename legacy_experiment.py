@@ -1,3 +1,6 @@
+"""Modified from 
+https://github.com/ofirnabati/Neural-Linear-Bandits-with-Likelihood-Matching/blob/main/main.py
+"""
 import multiprocessing
 import os
 import pickle as pkl
