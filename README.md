@@ -19,11 +19,24 @@ as specified in [3] (Table 1) and implemented in neural-tangents library (link).
 * Upper Confidence Bounds (UCB)
 * Thompson Sampling (TS)
 
+## Citing the work
+
 This project accompanies the paper:
 
 Lisicki, Michal, Arash Afkanpour, and Graham W. Taylor. "An Empirical Study of Neural Kernel Bandits." Neural Information Processing Systems (NeurIPS) Workshop on Bayesian Deep Learning, 2021. https://arxiv.org/abs/2111.03543.
 
-#### Dependencies
+### BibTeX
+
+```
+@inproceedings{lisicki2021empirical,
+  title={An Empirical Study of Neural Kernel Bandits},
+  author={Lisicki, Mihal and Afkanpour, Arash and Taylor, Graham W},
+  booktitle={Neural Information Processing Systems (NeurIPS) Workshop on Bayesian Deep Learning},
+  year={2021}  
+}
+```
+
+## Dependencies
 
 To install the dependencies, enter a Python 3.7+ virtual environment of your choice, and run:
 
@@ -31,14 +44,14 @@ To install the dependencies, enter a Python 3.7+ virtual environment of your cho
 python -m pip install -r requirements.txt
 ```
 
-#### How to download datasets?
+## How to download datasets?
 
 ```bash
 cd contextual_bandits/datasets/
 wget -i wget_list.txt
 ```
 
-#### How to run an experiment?
+## How to run an experiment?
 
 Run the script with default parameters to perform a full experiment with NK-TS. Optionally change the training frequency to perform a significantly faster run without much loss in overall performance:
 
@@ -54,7 +67,7 @@ python neural_kernel_experiment.py --help
 
 For consistency in reporting the results, I recommend running the script with a fixed seed (`--seed` flag). All the experiments in the paper were run with seeds in range `1234-1244`.
 
-#### How to analyze the results?
+## How to analyze the results?
 
 The results are saved in the `./outputs` directory. The experiment file names include the general name of the experiment and the most significant hyperparameters. Plots and a summary can obtained by running:
 
@@ -62,7 +75,7 @@ The results are saved in the `./outputs` directory. The experiment file names in
 python analyze_results.py
 ```
 
-#### References
+## References
 
 [1] Riquelme, Carlos, George Tucker, and Jasper Snoek. “Deep Bayesian Bandits Showdown: An Empirical Comparison of Bayesian Deep Networks for Thompson Sampling.” *ArXiv:1802.09127 [Cs, Stat]*, February 25, 2018. http://arxiv.org/abs/1802.09127.
 
