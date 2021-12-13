@@ -75,6 +75,10 @@ The results are saved in the `./outputs` directory. The experiment file names in
 python analyze_results.py
 ```
 
+## Acknowledgements
+
+We thank the [Vector AI](https://vectorinstitute.ai/) Engineering team (Gerald Shen, [Maria Koshkina](https://mkoshkina.github.io/) and Deval Pandya) for code review.
+
 ## References
 
 [1] Riquelme, Carlos, George Tucker, and Jasper Snoek. “Deep Bayesian Bandits Showdown: An Empirical Comparison of Bayesian Deep Networks for Thompson Sampling.” *ArXiv:1802.09127 [Cs, Stat]*, February 25, 2018. http://arxiv.org/abs/1802.09127.
