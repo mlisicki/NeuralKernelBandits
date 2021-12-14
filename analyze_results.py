@@ -58,13 +58,14 @@ for dataset_name in DSLIST:
       hparams = d['hparams'][i]
       model = d['models'][i]
 
-      if hparams['joint']:
-        model = "Joint{}".format(model)
+      if model.startswith("NK"):
+        if hparams['joint']:
+          model = "Joint{}".format(model)
 
-      model += "_{}_g{}e{}l{}".format(hparams['mode'], hparams['gamma'],
-                                      hparams['eta'], hparams['num_layers'])
-      if hparams['training_freq'] > 1:
-        model += "f{}".format(hparams['training_freq'])
+        model += "_{}_g{}e{}l{}".format(hparams['mode'], hparams['gamma'],
+                                        hparams['eta'], hparams['num_layers'])
+        if hparams['training_freq'] > 1:
+          model += "f{}".format(hparams['training_freq'])
 
       if model not in data[dataset_name]:
         data[dataset_name][model] = defaultdict(list)
