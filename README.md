@@ -30,7 +30,7 @@ Lisicki, Michal, Arash Afkanpour, and Graham W. Taylor. "An Empirical Study of N
 ```
 @inproceedings{lisicki2021empirical,
   title={An Empirical Study of Neural Kernel Bandits},
-  author={Lisicki, Mihal and Afkanpour, Arash and Taylor, Graham W},
+  author={Lisicki, Michal and Afkanpour, Arash and Taylor, Graham W},
   booktitle={Neural Information Processing Systems (NeurIPS) Workshop on Bayesian Deep Learning},
   year={2021}  
 }
