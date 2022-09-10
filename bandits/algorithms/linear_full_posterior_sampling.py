@@ -47,6 +47,14 @@ class LinearFullPosteriorSampling(BanditAlgorithm):
     self.name = name
     self.hparams = hparams
 
+    if hasattr(hparams, 'ucb'):
+      self.ucb = self.hparams.ucb
+    else:
+      self.ucb = False
+    if hasattr(hparams, 'ucb_eta'):
+      self.ucb_eta = self.hparams.ucb_eta
+    else:
+      self.ucb_eta = 0.001
     # Gaussian prior for each beta_i
     self._lambda_prior = self.hparams.lambda_prior
 
@@ -99,26 +107,38 @@ class LinearFullPosteriorSampling(BanditAlgorithm):
         self.b[i] * invgamma.rvs(self.a[i])
         for i in range(self.hparams.num_actions)
     ]
+    if self.ucb:
+      if self.intercept:
+        c = np.array(context[:])
+        c = np.append(c, 1.0).reshape((1, self.hparams.context_dim + 1))
+      else:
+        c = np.array(context[:]).reshape((1, self.hparams.context_dim))
+      try:
+        vals = [self.mu[i] @ c.T + np.sqrt(np.squeeze(self.ucb_eta * c @ (sigma2_s[i] * self.cov[i]) @ c.T)) for i in
+                range(self.hparams.num_actions)]
+      except:
+        d = self.latent_dim
+        vals = [np.sqrt(np.squeeze(self.ucb_eta * c @ (sigma2_s[i] * np.eye(d)) @ c.T)) for i in range(self.hparams.num_actions)]
+    else:
+      try:
+        beta_s = [
+            np.random.multivariate_normal(self.mu[i], sigma2_s[i] * self.cov[i])
+            for i in range(self.hparams.num_actions)
+        ]
+      except np.linalg.LinAlgError as e:
+        # Sampling could fail if covariance is not positive definite
 
-    try:
-      beta_s = [
-          np.random.multivariate_normal(self.mu[i], sigma2_s[i] * self.cov[i])
+        d = self.hparams.context_dim + 1
+        beta_s = [
+            np.random.multivariate_normal(np.zeros((d)), np.eye(d))
+            for i in range(self.hparams.num_actions)
+        ]
+
+      # Compute sampled expected values, intercept is last component of beta
+      vals = [
+          np.dot(beta_s[i][:-1], context.T) + beta_s[i][-1]
           for i in range(self.hparams.num_actions)
       ]
-    except np.linalg.LinAlgError as e:
-      # Sampling could fail if covariance is not positive definite
-
-      d = self.hparams.context_dim + 1
-      beta_s = [
-          np.random.multivariate_normal(np.zeros((d)), np.eye(d))
-          for i in range(self.hparams.num_actions)
-      ]
-
-    # Compute sampled expected values, intercept is last component of beta
-    vals = [
-        np.dot(beta_s[i][:-1], context.T) + beta_s[i][-1]
-        for i in range(self.hparams.num_actions)
-    ]
 
     return np.argmax(vals)
 
