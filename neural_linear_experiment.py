@@ -12,6 +12,9 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License."""
 
+# WARNING: This experiment currently can only be run with Tensorflow 1.
+# Follow the README instructions to set up the legacy virtual environment.
+
 import os
 import pickle as pkl
 import time
@@ -20,9 +23,12 @@ import numpy as np
 import tensorflow as tf
 from absl import app, flags
 
-from bandits.algorithms.linear_full_posterior_sampling import (
-    LinearFullPosteriorSampling)
-from bandits.algorithms.uniform_sampling import UniformSampling
+from bandits.algorithms.neural_linear_sampling import (
+    NeuralLinearPosteriorSampling)
+from bandits.algorithms.neural_linear_sampling_lm import (
+    NeuralLinearPosteriorSamplingLM)
+from bandits.algorithms.neural_linear_sampling_ntk import (
+    NeuralLinearPosteriorSamplingNTK)
 from bandits.core.contextual_bandit import run_contextual_bandit
 from bandits.data.data_sampler import (sample_adult_data, sample_census_data,
                                        sample_covertype_data,
@@ -43,16 +49,12 @@ FLAGS.set_default('alsologtostderr', True)
 # Hyperparameters
 flags.DEFINE_integer('seed', None, 'Random seed')
 flags.DEFINE_list(
-    'methods', ['linucb'], 'Methods list. Choose between: uniform '
-    '/ linucb . You can specify multiple '
-    'methods in a list. Warning: Running multiple NKs will '
-    'result in a heavy computational load.')
+    'methods', ['neural-linear', 'neural-linear-lm', 'neural-linear-ntk'], 'Methods list.'
+    'Choose between: neural-linear / neural-linear-lm / neural-linear-ntk. You can specify multiple '
+    'methods in a list.')
 flags.DEFINE_boolean('joint', False, 'Use a joint or disjoint model')
-flags.DEFINE_boolean('normalizey', False,
-                     'Normalize the targets before passing them to GP')
-flags.DEFINE_string('nkmode', 'rand_prior', 'NK GP posterior type')
-flags.DEFINE_float('nkreg', 0.2, 'NK regularizer')
 flags.DEFINE_integer('nlayers', 2, 'Number of layers in neural models')
+flags.DEFINE_integer('nunits', 100, 'Number of units per layer in neural models.')
 flags.DEFINE_float('eta', 0.1, 'Bandit exploration parameter')
 flags.DEFINE_integer('steps', 5000, 'Number of MAB steps')
 flags.DEFINE_integer('trainfreq', 1, 'Training frequency of NK bandits')
@@ -233,21 +235,95 @@ def display_final_results(algos, opt_rewards, opt_actions, res, name):
 
 
 def get_algorithm(method, num_actions, context_dim):
-  if method == 'linucb':
+  if method == 'neural-linear':
+    # Hyperparameters follow the settings of table 2 in (Riquelme 2018)
     hparams = HParams(num_actions=num_actions,
                       context_dim=context_dim,
-                      ucb=True,
-                      ucb_eta=0.1,
+                      init_scale=0.3,
+                      activation=tf.nn.relu,
+                      layer_sizes=[FLAGS.nunits] * FLAGS.nlayers,
+                      batch_size=512,
+                      activate_decay=True,
+                      initial_lr=0.1,
+                      max_grad_norm=5.0,
+                      show_training=False,
+                      freq_summary=1000,
+                      buffer_s=-1,
+                      initial_pulls=3,
+                      reset_lr=True,
+                      lr_decay_rate=0.5,
+                      # training_freq=1 "It makes sense to keep an exact linear regression (as in (1) and (2))
+                      # at all times, adding each new data point as soon as it arrives" (Riquelme 2018)
+                      training_freq=FLAGS.trainfreq, # how often to update the regression model
+                      training_freq_network=20, # how often to update the network
+                      training_epochs=20, # how many epochs (mini-batches) to train the network for
+                      a0=3,
+                      b0=3,
+                      lambda_prior=0.25,
+                      verbose=False)
+    algo = NeuralLinearPosteriorSampling('NeuralLinearTSl{}n{}'.format(FLAGS.nlayers, FLAGS.nunits), hparams)
+
+  elif method == 'neural-linear-lm':
+    hparams = HParams(num_actions=num_actions,
+                      context_dim=context_dim,
+                      init_scale=0.3,
+                      activation=tf.nn.relu,
+                      layer_sizes=[FLAGS.nunits] * FLAGS.nlayers,
+                      batch_size=num_actions * 16,
+                      activate_decay=True,
+                      initial_lr=0.1,
+                      max_grad_norm=5.0,
+                      show_training=False,
+                      freq_summary=1000,
+                      buffer_s=-1,
+                      initial_pulls=2,
+                      reset_lr=True,
+                      lr_decay_rate=0.5,
+                      training_freq=FLAGS.trainfreq,
+                      training_freq_network=1, # tf,
+                      training_epochs=1, # ts,
                       a0=6,
                       b0=6,
-                      lambda_prior=0.25,
-                      initial_pulls=3)
-    algo = LinearFullPosteriorSampling('LinearUCB / LinFullPost', hparams)
+                      lambda_prior=1,
+                      mem=num_actions * 100,
+                      mu_prior_flag=1,
+                      sigma_prior_flag=1,
+                      pgd_freq=1,
+                      pgd_steps=1,
+                      pgd_batch_size=20,
+                      verbose=False)
+    algo = NeuralLinearPosteriorSamplingLM('NeuralLinearTS-LMl{}n{}'.format(FLAGS.nlayers, FLAGS.nunits), hparams)
 
-  elif method == 'uniform':
-    # Uniform and Fixed
-    hparams = HParams(num_actions=num_actions)
-    algo = UniformSampling('Uniform Sampling', hparams)
+  elif method == 'neural-linear-ntk':
+    hparams = HParams(num_actions=num_actions,
+                      context_dim=context_dim,
+                      init_scale=0.3,
+                      activation=tf.nn.relu,
+                      layer_sizes=[FLAGS.nunits] * FLAGS.nlayers,
+                      batch_size=num_actions * 16,
+                      activate_decay=True,
+                      initial_lr=0.1,
+                      max_grad_norm=5.0,
+                      show_training=False,
+                      freq_summary=1000,
+                      buffer_s=-1,
+                      initial_pulls=2,
+                      reset_lr=True,
+                      lr_decay_rate=0.5,
+                      training_freq=FLAGS.trainfreq,
+                      training_freq_network=1, # tf,
+                      training_epochs=1, # ts,
+                      a0=6,
+                      b0=6,
+                      lambda_prior=1,
+                      mem=num_actions * 100,
+                      mu_prior_flag=1,
+                      sigma_prior_flag=1,
+                      pgd_freq=1,
+                      pgd_steps=2,
+                      pgd_batch_size=20,
+                      verbose=False)
+    algo = NeuralLinearPosteriorSamplingNTK('NeuralLinearTS-NTKl{}n{}'.format(FLAGS.nlayers, FLAGS.nunits), hparams)
 
   else:
     raise ValueError(f"Method name {method} is not found")
@@ -269,7 +345,7 @@ def experiment(methods, dataset, token):
 
   res = np.zeros((len(methods), len(dataset)))
   totalreward = [0] * len(methods)
-  rewards = [[]] * len(methods)
+  rewards = [[] for _ in range(len(methods))]
 
   for i_run in range(Nruns):
 
@@ -286,7 +362,7 @@ def experiment(methods, dataset, token):
       totalreward[j] += ((np.sum(h_rewards[:, j])) / Nruns)
       rewards[j].append((np.sum(h_rewards[:, j])))
 
-    actions = [[] for i in range(len(h_actions[0]))]
+    actions = [[] for _ in range(len(h_actions[0]))]
     for aa in h_actions:
       for i, a in enumerate(aa):
         actions[i].append(a)
@@ -295,14 +371,14 @@ def experiment(methods, dataset, token):
       res[i_alg, :] += 1 * ((actions[i_alg] != opt_actions))
 
     pkl_path = os.path.join(
-        OUTDIR, "linucb_experiment_{}_{}_run{}_{}.pkl".format(
+        OUTDIR, "neural_linear_experiment_{}_{}_run{}_{}.pkl".format(
             num_contexts, str(token), str(i_run), data_type))
 
     with open(pkl_path, "wb") as fp:
       # Collect experiment statistics
       pkl.dump(
           {
-              'desc': 'LinUCB experiment',
+              'desc': 'Neural-linear bandits experiment',
               'seed': FLAGS.seed,
               'times': times,
               'models': [alg.name for alg in algos],
@@ -330,9 +406,12 @@ def main(argv):
 
   if FLAGS.seed is not None:
     np.random.seed(FLAGS.seed)
-    tf.random.set_seed(FLAGS.seed)
+    tf.set_random_seed(FLAGS.seed)
 
-  methods = FLAGS.methods
+  if FLAGS.methods is None:
+    methods = ['neural-linear', 'neural-linear-lm', 'neural-linear-ntk']
+  else:
+    methods = FLAGS.methods
   datasets = [
       'financial', 'jester', 'statlog', 'adult', 'covertype', 'census',
       'mushroom'

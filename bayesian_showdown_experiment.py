@@ -12,6 +12,9 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License."""
 
+# WARNING: This experiment currently can only be run with Tensorflow 1.
+# Follow the README instructions to set up the legacy virtual environment.
+
 import os
 import pickle as pkl
 import time
@@ -20,10 +23,12 @@ import numpy as np
 import tensorflow as tf
 from absl import app, flags
 
+from bandits.algorithms.uniform_sampling import UniformSampling
 from bandits.algorithms.linear_full_posterior_sampling import (
     LinearFullPosteriorSampling)
-from bandits.algorithms.nk_sampling import NKBandit
-from bandits.algorithms.uniform_sampling import UniformSampling
+from bandits.algorithms.parameter_noise_sampling import ParameterNoiseSampling
+from bandits.algorithms.posterior_bnn_sampling import PosteriorBNNSampling
+from bandits.algorithms.bootstrapped_bnn_sampling import BootstrappedBNNSampling
 from bandits.core.contextual_bandit import run_contextual_bandit
 from bandits.data.data_sampler import (sample_adult_data, sample_census_data,
                                        sample_covertype_data,
@@ -44,16 +49,12 @@ FLAGS.set_default('alsologtostderr', True)
 # Hyperparameters
 flags.DEFINE_integer('seed', None, 'Random seed')
 flags.DEFINE_list(
-    'methods', ['nk-ts'], 'Methods list. Choose between: uniform '
-    '/ linear / ntk-ts / ntk-ucb. You can specify multiple '
+    'methods', None, 'Methods list. Choose between: uniform '
+    '/ lints / linucb / alpha_div / bbb / bootrms / dropout '
+    '/ gp / rms / pnoise . You can specify multiple '
     'methods in a list. Warning: Running multiple NKs will '
     'result in a heavy computational load.')
 flags.DEFINE_boolean('joint', False, 'Use a joint or disjoint model')
-flags.DEFINE_boolean('normalizey', False,
-                     'Normalize the targets before passing them to GP')
-flags.DEFINE_string('nkmode', 'rand_prior', 'NK GP posterior type')
-flags.DEFINE_float('nkreg', 0.2, 'NK regularizer')
-flags.DEFINE_integer('nlayers', 2, 'Number of layers in neural models')
 flags.DEFINE_float('eta', 0.1, 'Bandit exploration parameter')
 flags.DEFINE_integer('steps', 5000, 'Number of MAB steps')
 flags.DEFINE_integer('trainfreq', 1, 'Training frequency of NK bandits')
@@ -234,46 +235,219 @@ def display_final_results(algos, opt_rewards, opt_actions, res, name):
 
 
 def get_algorithm(method, num_actions, context_dim):
-  if method == 'linear':
-    hparams = HParams(num_actions=num_actions,
-                      context_dim=context_dim,
-                      a0=6,
-                      b0=6,
-                      lambda_prior=0.25,
-                      initial_pulls=3)
-    algo = LinearFullPosteriorSampling('LinearTS / LinFullPost', hparams)
-
-  elif method == 'uniform':
+  if method == 'uniform':
     # Uniform and Fixed
     hparams = HParams(num_actions=num_actions)
     algo = UniformSampling('Uniform Sampling', hparams)
 
-  elif method == 'nk-ts':
-    hparams = HParams(
-        alg="ts",
-        joint=FLAGS.joint,
-        mode=FLAGS.nkmode,
-        num_actions=num_actions,
-        context_dim=context_dim,
-        num_layers=FLAGS.nlayers,
-        gamma=FLAGS.nkreg,  # diag reg
-        eta=FLAGS.eta,  # Exploration parameter
-        training_freq=FLAGS.trainfreq)
-    algo = NKBandit('NK-TS', hparams)  #
+  elif method == 'linucb':
+    hparams = HParams(num_actions=num_actions,
+                      context_dim=context_dim,
+                      ucb=True,
+                      ucb_eta=0.1,
+                      a0=6,
+                      b0=6,
+                      lambda_prior=0.25,
+                      initial_pulls=3)
+    algo = LinearFullPosteriorSampling('LinearUCB / LinFullPost', hparams)
 
-  elif method == 'nk-ucb':
-    hparams = HParams(
-        alg="ucb",
-        joint=FLAGS.joint,
-        mode=FLAGS.nkmode,
-        num_actions=num_actions,
-        context_dim=context_dim,
-        num_layers=FLAGS.nlayers,
-        gamma=FLAGS.nkreg,  # diag reg
-        eta=FLAGS.eta,  # Exploration parameter
-        training_freq=FLAGS.trainfreq)
-    algo = NKBandit('NK-UCB', hparams)  #
+  elif method == 'lints':
+      hparams = HParams(num_actions=num_actions,
+                                            context_dim=context_dim,
+                                            a0=6,
+                                            b0=6,
+                                            lambda_prior=0.25,
+                                            initial_pulls=3)
+      algo = LinearFullPosteriorSampling('LinearTS / LinFullPost', hparams)
 
+  elif method == 'alpha_div':
+      # AlphaDivergence (1)
+      hparams = HParams(num_actions=num_actions,
+                        context_dim=context_dim,
+                        init_scale='test',  # This doesn't seem to be used
+                        activation=tf.nn.relu,
+                        layer_sizes=[100, 100],
+                        # all NN are based on the same architecture: 100,100 relu
+                        batch_size=512,
+                        activate_decay=True,  # Use learning rate decay
+                        initial_lr=1,
+                        # I'm setting this as in RMS3, as they don't reset LR in this example. Not sure if that's how Riquelme did it though.
+                        max_grad_norm=5.0,
+                        show_training=False,
+                        freq_summary=1000,
+                        buffer_s=-1,
+                        # paper states they decided not to use data buffer after initial experimentation
+                        initial_pulls=3,
+                        # for all models we pull each arm 3 times in round robin before we start
+                        optimizer='test',  # this doesn't seem to be used
+                        use_sigma_exp_transform=True,
+                        cleared_times_trained=100,
+                        initial_training_steps=10000,
+                        # Linear decay of training steps. Initial t_s=10000, then decay for 'cleared' number of steps (each time by 100), until it reaches 100
+                        noise_sigma=0.1,
+                        reset_lr=False,
+                        # Don't reset learning rate on each bandit model retraining step
+                        training_freq=20,
+                        training_epochs=100,  # t_s
+                        alpha=0.5,  # main alpha-divergence param
+                        # k=10, # I think k is given by num_mc_nn_samples
+                        num_mc_nn_samples=10,
+                        prior_variance=0.1)  # prior variance is sigma_0^2
+      algo = PosteriorBNNSampling('BBAlphaDiv', hparams, 'AlphaDiv')
+
+  elif method == 'bbb':
+      # BBB
+      hparams_bbb = HParams(num_actions=num_actions,
+                            context_dim=context_dim,
+                            init_scale='test',
+                            activation=tf.nn.relu,
+                            layer_sizes=[100, 100],
+                            batch_size=512,
+                            activate_decay=True,
+                            initial_lr=1,
+                            # I'm setting this to 1 whenever we don't reset LR. This follows settings for RMS3, but I'm not sure if that's correct globally.
+                            max_grad_norm=5.0,
+                            show_training=False,
+                            freq_summary=1000,
+                            buffer_s=-1,
+                            initial_pulls=3,
+                            optimizer='test',
+                            use_sigma_exp_transform=True,
+                            cleared_times_trained=100,
+                            initial_training_steps=10000,
+                            noise_sigma=0.1,
+                            reset_lr=False,
+                            training_freq=20,  # specified in table2's description
+                            training_epochs=100)
+      algo = PosteriorBNNSampling('BBB', hparams_bbb, 'Variational')
+
+  elif method == 'bootrms':
+      # Bootsrapped NN
+      hparams_bootrms = HParams(num_actions=num_actions,
+                                context_dim=context_dim,
+                                init_scale=0.3,
+                                activation=tf.nn.relu,
+                                layer_sizes=[100, 100],
+                                batch_size=512,
+                                activate_decay=True,
+                                initial_lr=1.0,
+                                max_grad_norm=5.0,
+                                show_training=False,
+                                freq_summary=1000,
+                                buffer_s=-1,
+                                initial_pulls=3,
+                                optimizer='RMS',
+                                reset_lr=False,
+                                lr_decay_rate=0.5,
+                                # Default choice. idk if this is correct. But it is close to RMS3 setting of 0.55
+                                training_freq=20,
+                                training_epochs=20,
+                                p=1.0,
+                                # Prob of independently including each datapoint in each model.
+                                q=10)  # Number of models that are independently trained.
+      algo = BootstrappedBNNSampling('BootRMS', hparams_bootrms)
+
+  elif method == 'dropout':
+      # Dropout
+      hparams_dropout = HParams(num_actions=num_actions,
+                                context_dim=context_dim,
+                                init_scale=0.3,
+                                activation=tf.nn.relu,
+                                layer_sizes=[100, 100],
+                                batch_size=512,
+                                activate_decay=True,
+                                initial_lr=0.1,  # idk if this is correct
+                                max_grad_norm=5.0,
+                                show_training=False,
+                                freq_summary=1000,
+                                buffer_s=-1,
+                                initial_pulls=3,
+                                optimizer='RMS',
+                                reset_lr=True,
+                                lr_decay_rate=0.5,
+                                training_freq=20,
+                                training_epochs=20,
+                                use_dropout=True,
+                                keep_prob=0.8)
+      algo = PosteriorBNNSampling('Dropout', hparams_dropout, 'RMSProp')
+
+  elif method == 'gp':
+      # GP
+      # Hyperparameters optimized internally, using marginal likelihood as a loss function
+      # Other hyperparameters are not reported so I'm using dafualts
+      hparams_gp = HParams(num_actions=num_actions,
+                           num_outputs=num_actions,
+                           context_dim=context_dim,
+                           reset_lr=False,
+                           learn_embeddings=True,
+                           max_num_points=1000,
+                           show_training=False,
+                           freq_summary=1000,
+                           batch_size=512,
+                           keep_fixed_after_max_obs=True,
+                           training_freq=20,
+                           initial_pulls=3,
+                           training_epochs=20,
+                           lr=0.01,
+                           buffer_s=-1,
+                           initial_lr=0.001,
+                           lr_decay_rate=0.0,
+                           optimizer='RMS',
+                           task_latent_dim=5,
+                           activate_decay=False)
+      algo = PosteriorBNNSampling('MultitaskGP', hparams_gp, 'GP')
+
+  elif method == 'rms':
+      # RMS2
+      hparams_rms = HParams(num_actions=num_actions,
+                            context_dim=context_dim,
+                            init_scale=0.3,
+                            activation=tf.nn.relu,
+                            layer_sizes=[100, 100],
+                            batch_size=512,
+                            activate_decay=True,
+                            initial_lr=0.1,
+                            max_grad_norm=5.0,
+                            show_training=False,
+                            freq_summary=1000,
+                            buffer_s=-1,
+                            initial_pulls=3,
+                            optimizer='RMS',
+                            reset_lr=True,
+                            lr_decay_rate=0.5,
+                            training_freq=20,
+                            training_epochs=20,
+                            p='test',
+                            q='test')
+      algo = PosteriorBNNSampling('RMS', hparams_rms, 'RMSProp')
+
+      # SGFS and ConstantSGD not implemented
+
+  elif method == 'pnoise':
+      hparams_pnoise = HParams(num_actions=num_actions,
+                               context_dim=context_dim,
+                               init_scale=0.3,
+                               activation=tf.nn.relu,
+                               layer_sizes=[100, 100],
+                               batch_size=512,
+                               activate_decay=True,
+                               initial_lr=0.1,
+                               max_grad_norm=5.0,
+                               show_training=False,
+                               freq_summary=1000,
+                               buffer_s=-1,
+                               initial_pulls=3,
+                               optimizer='RMS',
+                               reset_lr=True,
+                               lr_decay_rate=0.5,
+                               training_freq=20,
+                               training_epochs=20,
+                               noise_std=0.01,
+                               eps=0.01,
+                               d_samples=300,
+                               layer_norm=True
+                               )
+      algo = ParameterNoiseSampling('ParamNoise', hparams_pnoise)
   else:
     raise ValueError(f"Method name {method} is not found")
 
@@ -320,14 +494,14 @@ def experiment(methods, dataset, token):
       res[i_alg, :] += 1 * ((actions[i_alg] != opt_actions))
 
     pkl_path = os.path.join(
-        OUTDIR, "neural_kernel_experiment_{}_{}_run{}_{}.pkl".format(
+        OUTDIR, "bayesian_showdown_experiment_{}_{}_run{}_{}.pkl".format(
             num_contexts, str(token), str(i_run), data_type))
 
     with open(pkl_path, "wb") as fp:
       # Collect experiment statistics
       pkl.dump(
           {
-              'desc': 'NK bandits experiment',
+              'desc': 'Relevant algorithms from Riquelme\'s Bayesian Showdown experiment',
               'seed': FLAGS.seed,
               'times': times,
               'models': [alg.name for alg in algos],
@@ -355,9 +529,13 @@ def main(argv):
 
   if FLAGS.seed is not None:
     np.random.seed(FLAGS.seed)
-    tf.random.set_seed(FLAGS.seed)
+    tf.set_random_seed(FLAGS.seed)
 
-  methods = FLAGS.methods
+  if FLAGS.methods is None:
+    methods = ['uniform', 'lints', 'linucb', 'alpha_div', 'bbb',
+               'bootrms', 'dropout', 'gp', 'rms', 'pnoise']
+  else:
+    methods = FLAGS.methods
   datasets = [
       'financial', 'jester', 'statlog', 'adult', 'covertype', 'census',
       'mushroom'
